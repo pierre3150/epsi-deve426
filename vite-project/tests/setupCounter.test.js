@@ -1,55 +1,32 @@
-import {setupCounter} from '../functions/setupCounter';
-import {describe, it, expect, vi} from 'vitest';
+import { test as playwrightTest, expect as playwrightExpect } from '@playwright/test';
 
-describe('setupCounter', () => {
-    it('should initialize the counter to 0 and update on click', () => {
-        // Create a mock DOM element
-        const element = {innerHTML: '', addEventListener: vi.fn()};
-
-        // Call the setupCounter function with the mock element
-        setupCounter(element);
-
-        // Verify the initial counter value
-        expect(element.innerHTML).toBe('count is 0');
-
-        // Simulate a click event
-        const clickHandler = element.addEventListener.mock.calls[0][1];
-        clickHandler();
-
-        // Verify the counter value after one click
-        expect(element.innerHTML).toBe('count is 1');
-
-        // Simulate more click events
-        clickHandler();
-        clickHandler();
-
-        // Verify the counter value after three clicks
-        expect(element.innerHTML).toBe('count is 3');
+playwrightTest.describe('setupCounter', () => {
+    playwrightTest.beforeEach(async ({ page }) => {
+        await page.goto('http://localhost:3000'); // Replace with your actual URL
     });
 
-    it('should clamp the counter value between 0 and 10', () => {
-        // Create a mock DOM element
-        const element = {innerHTML: '', addEventListener: vi.fn()};
+    playwrightTest('initializes and updates on click', async ({ page }) => {
+        const counterElement = await page.$('#counter'); // Ensure the element has the ID 'counter'
+        await playwrightExpect(counterElement).toHaveText('count is 0');
+        await counterElement.click();
+        await playwrightExpect(counterElement).toHaveText('count is 1');
+        await counterElement.click();
+        await counterElement.click();
+        await playwrightExpect(counterElement).toHaveText('count is 3');
+    });
 
-        // Call the setupCounter function with the mock element
-        setupCounter(element);
-
-        // Simulate 11 click events to exceed the upper limit
-        const clickHandler = element.addEventListener.mock.calls[0][1];
+    playwrightTest('clamps the counter value between 0 and 10', async ({ page }) => {
+        const counterElement = await page.$('#counter'); // Ensure the element has the ID 'counter'
         for (let i = 0; i < 11; i++) {
-            clickHandler();
+            await counterElement.click();
         }
-
-        // Verify the counter value is clamped to 10
-        expect(element.innerHTML).toBe('count is 10');
-
-        // Simulate a click event to decrease the counter
-        element.innerHTML = 'count is 0';
+        await playwrightExpect(counterElement).toHaveText('count is 10');
+        await page.evaluate(() => {
+            document.querySelector('#counter').innerHTML = 'count is 0';
+        });
         for (let i = 0; i < 11; i++) {
-            clickHandler();
+            await counterElement.click();
         }
-
-        // Verify the counter value is clamped to 0
-        expect(element.innerHTML).toBe('count is 10');
+        await playwrightExpect(counterElement).toHaveText('count is 10');
     });
 });
